@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  payment-service:
+    build:
+      context: ./payment-service/
+      dockerfile: ./Dockerfile
+    container_name: payment-service-container
+    ports:
+      - 8002:8000
+    networks:
+      - default
+    depends_on:
+      - worker-service-1
+      - worker-service-2
+
+  worker-service-1:
+    build:
+      context: ./worker-service/
+      dockerfile: ./Dockerfile
+    container_name: worker-service-container-1
+    ports:
+      - 8000:8000
+    networks:
+      - default
+    depends_on:
+      - consul
+
+  worker-service-2:
+    build:
+      context: ./worker-service/
+      dockerfile: ./Dockerfile
+    container_name: worker-service-container-2
+    ports:
+      - 8001:8000
+    networks:
+      - default
+    depends_on:
+      - consul
+
+  consul:
+    image: consul
+    container_name: consul-container
+    environment:
+      - TZ=America/Recife
+    volumes:
+      - ./consul/server.json:/consul/config/server.json:ro
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    networks:
+      - default
+    command: "agent -bootstrap-expect=1 -client=0.0.0.0"
+
+networks:
+  default:
+    external: true
+    name: dev
